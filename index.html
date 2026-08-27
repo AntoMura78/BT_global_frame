@@ -88,7 +88,7 @@
         <div class="scale-filter" aria-labelledby="scale-title">
           <p class="filter-title help-label" id="scale-title" tabindex="0" aria-describedby="scale-help">Scala <span class="help-icon" aria-hidden="true">?</span><span class="help-tooltip" id="scale-help" role="tooltip">Seleziona l'unità di misura.</span></p>
           <div class="radio-list">
-            <label><input type="radio" name="scale" value="index" checked> Indice 2022 = 100</label>
+            <label><input type="radio" name="scale" value="index" checked> Indice |media 2022| = 100</label>
             <label><input type="radio" name="scale" value="original"> Valori originali</label>
           </div>
         </div>
@@ -184,7 +184,7 @@
       if(state.highlighted&&!selected.includes(state.highlighted))state.highlighted=null;svg.setAttribute('viewBox',`0 0 ${w} ${h}`);$('legend').innerHTML=selected.map((s,i)=>`<button type="button" class="legend-item" data-series="${encodeURIComponent(s)}" aria-pressed="${state.highlighted===s}"><i class="swatch" style="background:${COLORS[i%COLORS.length]}"></i><span>${cleanLabel(s)}</span></button>`).join('');
       if(!selected.length){svg.innerHTML='<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" class="empty-state">Seleziona almeno una serie dal pannello “Serie”.</div></foreignObject>';$('status').textContent='';return}
       const periods=state.periods.slice(state.from,state.to+1),allowed=new Set(periods),rows=state.rows.filter(r=>r.correction===state.correction&&allowed.has(r.period));
-      const byPeriod=new Map(rows.map(r=>[r.period,r])),baseRows=state.rows.filter(r=>r.correction===state.correction&&r.period.startsWith('2022-')),baseMeans=new Map(selected.map(s=>{const vals=baseRows.map(r=>r[s]).filter(v=>v!=null),mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;return[s,mean]})),missingBase=state.scale==='index'?selected.filter(s=>!Number.isFinite(baseMeans.get(s))||baseMeans.get(s)===0):[];
+      const byPeriod=new Map(rows.map(r=>[r.period,r])),baseRows=state.rows.filter(r=>r.correction===state.correction&&r.period.startsWith('2022-')),baseMeans=new Map(selected.map(s=>{const vals=baseRows.map(r=>r[s]).filter(v=>v!=null),mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;return[s,mean==null?null:Math.abs(mean)]})),missingBase=state.scale==='index'?selected.filter(s=>!Number.isFinite(baseMeans.get(s))||baseMeans.get(s)===0):[];
       const plotByPeriod=new Map(periods.map(period=>{const raw=byPeriod.get(period),plot={};selected.forEach(s=>{const value=raw?.[s],base=baseMeans.get(s);plot[s]=value==null?null:state.scale==='index'?(Number.isFinite(base)&&base!==0?value/base*100:null):value});return[period,plot]})),values=[];selected.forEach(s=>periods.forEach(p=>{const v=plotByPeriod.get(p)?.[s];if(v!=null)values.push(v)}));
       if(!values.length){const message=missingBase.length?'Le serie selezionate non dispongono di una base valida per il 2022. Passa ai valori originali o scegli altre serie.':'Nessun dato disponibile per i filtri selezionati.';svg.innerHTML=`<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" class="empty-state">${message}</div></foreignObject>`;$('status').textContent='';return}
       let min=Math.min(...values),max=Math.max(...values);const pad=(max-min||1)*.08;min-=pad;max+=pad;
@@ -193,7 +193,7 @@
       const x=i=>m.left+(periods.length===1?iw/2:i/(periods.length-1)*iw),y=v=>m.top+(max-v)/(max-min)*ih,monthIndexes=getMonthTicks(periods,iw),yearGroups=getYearGroups(periods);state.chart={left:m.left,right:w-m.right,width:iw,periods};$('resetZoom').classList.toggle('visible',state.from>0||state.to<state.periods.length-1);let html='';
       ticks.forEach((v,i)=>{const yy=y(v);html+=`<line class="grid-line" x1="${m.left}" y1="${yy}" x2="${w-m.right}" y2="${yy}"/><text class="axis-text" x="${m.left-8}" y="${yy+4}" text-anchor="end">${axisLabels[i]}</text>`});
       if(state.scale==='index'&&min<=100&&max>=100){const yy=y(100);html+=`<line class="base-line" x1="${m.left}" y1="${yy}" x2="${w-m.right}" y2="${yy}"/>`}
-      html+=`<text class="axis-unit" x="${m.left}" y="${m.top+13}">${state.scale==='index'?'Indice · media 2022 = 100':'Valore'}</text>`;
+      html+=`<text class="axis-unit" x="${m.left}" y="${m.top+13}">${state.scale==='index'?'Indice · |media 2022| = 100':'Valore'}</text>`;
       html+=`<line class="axis-line" x1="${m.left}" y1="${h-m.bottom}" x2="${w-m.right}" y2="${h-m.bottom}"/>`;
       monthIndexes.forEach(i=>{html+=`<line class="axis-line" x1="${x(i)}" y1="${h-m.bottom}" x2="${x(i)}" y2="${h-m.bottom+5}"/><text class="axis-month" x="${x(i)}" y="${h-m.bottom+20}" text-anchor="middle">${monthLabel(periods[i])}</text>`});
       const yearWidth=periods.length>1?iw*12/(periods.length-1):iw,yearSkip=Math.max(1,Math.ceil(48/Math.max(1,yearWidth)));
@@ -219,7 +219,7 @@
     function getYearGroups(periods){const groups=[];periods.forEach((period,i)=>{const year=period.slice(0,4),last=groups.at(-1);if(last&&last.year===year)last.end=i;else groups.push({year,start:i,end:i})});return groups}
     function downloadSelection(){
       const selected=[...state.selected];if(!selected.length)return;const periods=state.periods.slice(state.from,state.to+1),allowed=new Set(periods),rows=state.rows.filter(r=>r.correction===state.correction&&allowed.has(r.period)),byPeriod=new Map(rows.map(r=>[r.period,r]));
-      const baseRows=state.rows.filter(r=>r.correction===state.correction&&r.period.startsWith('2022-')),baseMeans=new Map(selected.map(s=>{const values=baseRows.map(r=>r[s]).filter(v=>v!=null);return[s,values.length?values.reduce((a,b)=>a+b,0)/values.length:null]}));
+      const baseRows=state.rows.filter(r=>r.correction===state.correction&&r.period.startsWith('2022-')),baseMeans=new Map(selected.map(s=>{const values=baseRows.map(r=>r[s]).filter(v=>v!=null),mean=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;return[s,mean==null?null:Math.abs(mean)]}));
       const scaleLabel=state.scale==='index'?'indice_2022_100':'valori_originali',escape=value=>{const text=String(value??'');return/[;"\r\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text},format=value=>value==null||!Number.isFinite(value)?'':new Intl.NumberFormat('it-IT',{useGrouping:false,maximumSignificantDigits:15}).format(value);
       const lines=[["period","correction","scala",...selected].map(escape).join(';')];periods.forEach(period=>{const row=byPeriod.get(period);if(!row)return;const values=selected.map(s=>{const raw=row[s],base=baseMeans.get(s),value=state.scale==='index'?(raw!=null&&Number.isFinite(base)&&base!==0?raw/base*100:null):raw;return format(value)});lines.push([period,state.correction,scaleLabel,...values].map(escape).join(';'))});
       const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bticino_${scaleLabel}_${periods[0]}_${periods.at(-1)}.csv`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)
