@@ -29,4 +29,3 @@ Caricare nel repository almeno:
 - `aggiorna_dati.bat` e `aggiorna_dati.ps1` se si desidera mantenere anche l'uso locale
 
 In GitHub aprire **Settings → Pages**, scegliere **Deploy from a branch**, selezionare il branch principale e la cartella `/ (root)`.
-
