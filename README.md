@@ -29,3 +29,18 @@ Caricare nel repository almeno:
 - `aggiorna_dati.bat` e `aggiorna_dati.ps1` se si desidera mantenere anche l'uso locale
 
 In GitHub aprire **Settings → Pages**, scegliere **Deploy from a branch**, selezionare il branch principale e la cartella `/ (root)`.
+
+## Pubblicazione protetta con Microsoft Azure
+
+Il file `staticwebapp.config.json` protegge l'intera applicazione, compresi i file nella cartella `data`, e richiede un account Microsoft associato al ruolo `cliente`.
+
+Procedura:
+
+1. Rendere privato il repository GitHub e disattivare GitHub Pages.
+2. Nel portale Azure creare una nuova risorsa **Static Web App** con piano **Free**.
+3. Collegare il repository GitHub `AntoMura78/BT_global_frame`, branch `main`.
+4. Impostare **App location** su `/` e lasciare vuota **Output location**.
+5. Attendere la prima distribuzione.
+6. Nella risorsa Azure aprire **Role management** e invitare ogni cliente assegnando il ruolo `cliente` tramite provider Microsoft Entra ID.
+
+Finché un utente non riceve il ruolo `cliente`, non può aprire né la dashboard né gli indirizzi diretti dei file CSV.
